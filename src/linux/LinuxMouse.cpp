@@ -66,7 +66,7 @@ void LinuxMouse::_initialize()
 		OIS_EXCEPT(E_General, "LinuxMouse::_initialize >> X error!");
 
 	//Warp mouse inside window
-	XWarpPointer(display,None,window,0,0,0,0, 6,6);
+	setPosition(0, 0);
 
 	//Create a blank cursor:
 	Pixmap bm_no;
@@ -187,6 +187,9 @@ void LinuxMouse::_processXEvents()
 			//Check to see if we are grabbing the mouse to the window (requires clipping and warping)
 			if( grabMouse )
 			{
+				if(mWarped)
+ 					continue;
+				
 				if( mState.X.abs < 0 )
 					mState.X.abs = 0;
 				else if( mState.X.abs > mState.width )
@@ -256,17 +259,48 @@ void LinuxMouse::_processXEvents()
 //-------------------------------------------------------------------//
 void LinuxMouse::grab(bool grab)
 {
+	if(grabMouse == grab)
+	{
+		return;
+	}
+
+	grabMouse = grab;
 	if( grab )
+	{
+		grabX = mState.X.abs;
+		grabY = mState.Y.abs;
 		XGrabPointer(display, window, True, 0, GrabModeAsync, GrabModeAsync, window, None, CurrentTime);
+	}
 	else
+	{
+		setPosition(grabX, grabY);
 		XUngrabPointer(display, CurrentTime);
+	}
 }
 
 //-------------------------------------------------------------------//
 void LinuxMouse::hide(bool hide)
 {
+	if(hideMouse == hide)
+	{
+		return;
+	}
+
+	hideMouse = hide;
 	if( hide )
 		XDefineCursor(display, window, cursor);
 	else
 		XUndefineCursor(display, window);
+}
+
+//-------------------------------------------------------------------//
+void LinuxMouse::setPosition(unsigned int x, unsigned int y)
+{
+	if(grabMouse)
+	{
+		return;
+	}
+
+	XWarpPointer(display, None, window, 0, 0, 0, 0, x, y);
+	mWarped = true;
 }

@@ -35,6 +35,8 @@ Win32Mouse::Win32Mouse( InputManager* creator, IDirectInput8* pDI, bool buffered
 	mDirectInput = pDI;
 	coopSetting = coopSettings;
 	mHwnd = 0;
+	mGrabMouse = ((coopSettings & DISCL_EXCLUSIVE) == DISCL_EXCLUSIVE);
+	mHideMouse = false;
 
 	static_cast<Win32InputManager*>(mCreator)->_setMouseUsed(true);
 }
@@ -213,4 +215,59 @@ bool Win32Mouse::_doMouseClick( int mouseButton, DIDEVICEOBJECTDATA& di )
 void Win32Mouse::setBuffered(bool buffered)
 {
 	mBuffered = buffered;
+}
+
+//--------------------------------------------------------------------------------------------------//
+void Win32Mouse::grab(bool grab)
+{
+	if(mGrabMouse == grab)
+		return;
+
+	mMouse->Unacquire();
+
+	if(grab)
+	{
+		coopSetting &= ~DISCL_BACKGROUND;
+		coopSetting &= ~DISCL_NONEXCLUSIVE;
+		coopSetting |= DISCL_FOREGROUND | DISCL_EXCLUSIVE;
+	}
+	else
+	{
+		coopSetting &= ~DISCL_FOREGROUND;
+		coopSetting &= ~DISCL_EXCLUSIVE;
+		coopSetting |= DISCL_BACKGROUND | DISCL_NONEXCLUSIVE;
+	}
+
+	if( FAILED(mMouse->SetCooperativeLevel(mHwnd, coopSetting)) )
+		OIS_EXCEPT( E_General, "Win32Mouse::Win32Mouse >> Failed to set coop level" );
+
+	HRESULT hr = mMouse->Acquire();
+	if (FAILED(hr) && hr != DIERR_OTHERAPPHASPRIO)
+		OIS_EXCEPT( E_General, "Win32Mouse::Win32Mouse >> Failed to aquire mouse!" );
+
+	ShowCursor(mHideMouse);
+
+	mGrabMouse = grab;
+}
+
+//--------------------------------------------------------------------------------------------------//
+void Win32Mouse::hide(bool hide)
+{
+	if(mHideMouse == hide)
+		return;
+
+	mHideMouse = hide;
+	ShowCursor(hide);
+}
+
+//--------------------------------------------------------------------------------------------------//
+void Win32Mouse::setPosition(unsigned int x, unsigned int y)
+{
+	if(mGrabMouse)
+		return;
+
+	RECT rect;
+	GetWindowRect(mHwnd, &rect);
+
+	SetCursorPos(rect.left + x, rect.top + y);
 }

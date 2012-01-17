@@ -46,6 +46,10 @@ namespace OIS
 		/** @copydoc Object::_initialize */
 		virtual void _initialize();
 
+		void grab(bool grab);
+		void hide(bool hide);
+		void setPosition(unsigned int x, unsigned int y);
+
 	protected:
 		bool _doMouseClick( int mouseButton, DIDEVICEOBJECTDATA& di );
 
@@ -53,6 +57,8 @@ namespace OIS
 		IDirectInputDevice8* mMouse;
 		DWORD coopSetting;
 		HWND mHwnd;
+		bool mGrabMouse;
+		bool mHideMouse;
 	};
 }
 

@@ -53,6 +53,7 @@ namespace OIS
 
 		void grab(bool grab);
 		void hide(bool hide);
+		void setPosition (unsigned int x, unsigned int y);
 
 	protected:
 		void _processXEvents();
@@ -69,6 +70,7 @@ namespace OIS
 		bool grabMouse;		//Are we grabbing the mouse to the window?
 		bool hideMouse;		//Are we hiding OS mouse?
 		bool mouseFocusLost;//Has the mouse just lost focus?
+		unsigned int grabX, grabY; //At which point did we start grabbing?
 	};
 }
 

@@ -124,6 +124,26 @@ namespace OIS
 		/** @remarks Returns the state of the mouse - is valid for both buffered and non buffered mode */
 		const MouseState& getMouseState() const { return mState; }
 
+		/**
+		@remarks
+			Starts or finishes grabbing the mouse, so it is bound to the current window. When
+			grabbing is disabled, the mouse position is restored to the one the grabbing started at.
+		*/
+		virtual void grab(bool grab) = 0;
+
+		/**
+		@remarks
+			Hides the mouse in the current window.
+		*/
+		virtual void hide(bool hide) = 0;
+
+		/**
+		 @remarks
+			Moves the mouse to the specified position. This function will only work if the
+			mouse isn't grabbed.
+		*/
+		virtual void setPosition(unsigned int x, unsigned int y) = 0;
+
 	protected:
 		Mouse(const std::string &vendor, bool buffered, int devID, InputManager* creator)
 			: Object(vendor, OISMouse, buffered, devID, creator), mListener(0) {}
