@@ -266,8 +266,9 @@ void Win32Mouse::setPosition(unsigned int x, unsigned int y)
 	if(mGrabMouse)
 		return;
 
-	RECT rect;
-	GetWindowRect(mHwnd, &rect);
-
-	SetCursorPos(rect.left + x, rect.top + y);
+	POINT point;
+	point.x = x;
+	point.y = y;
+	ClientToScreen(mHwnd, &point);
+	SetCursorPos(point.x, point.y);
 }
