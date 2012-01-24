@@ -166,8 +166,12 @@ void Win32Mouse::capture()
 			POINT point;
 			GetCursorPos(&point);
 			ScreenToClient(mHwnd, &point);
-			mState.X.abs = point.x;
-			mState.Y.abs = point.y;
+			if( point.x >= 0 && point.x <= mState.width &&
+				point.y >= 0 && point.y <= mState.height )
+			{
+				mState.X.abs = point.x;
+				mState.Y.abs = point.y;
+			}
 		}
 		else
 		{
@@ -227,15 +231,14 @@ void Win32Mouse::grab(bool grab)
 
 	if(grab)
 	{
-		coopSetting &= ~DISCL_BACKGROUND;
-		coopSetting &= ~DISCL_NONEXCLUSIVE;
+		//NOTE: DISCL_BACKGROUND | DISCL_EXCLUSIVE = invalid combination
+		coopSetting &= ~( DISCL_BACKGROUND | DISCL_NONEXCLUSIVE );
 		coopSetting |= DISCL_FOREGROUND | DISCL_EXCLUSIVE;
 	}
 	else
 	{
-		coopSetting &= ~DISCL_FOREGROUND;
 		coopSetting &= ~DISCL_EXCLUSIVE;
-		coopSetting |= DISCL_BACKGROUND | DISCL_NONEXCLUSIVE;
+		coopSetting |= DISCL_NONEXCLUSIVE;
 	}
 
 	if( FAILED(mMouse->SetCooperativeLevel(mHwnd, coopSetting)) )
