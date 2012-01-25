@@ -36,7 +36,8 @@ Win32Mouse::Win32Mouse( InputManager* creator, IDirectInput8* pDI, bool buffered
 	coopSetting = coopSettings;
 	mHwnd = 0;
 	mGrabMouse = ((coopSettings & DISCL_EXCLUSIVE) == DISCL_EXCLUSIVE);
-	mHideMouse = false;
+	mShowMouseState = mShowMouse = false;
+	ShowCursor(mShowMouseState);
 
 	static_cast<Win32InputManager*>(mCreator)->_setMouseUsed(true);
 }
@@ -166,11 +167,20 @@ void Win32Mouse::capture()
 			POINT point;
 			GetCursorPos(&point);
 			ScreenToClient(mHwnd, &point);
+			bool isInsideWindow = false;
 			if( point.x >= 0 && point.x <= mState.width &&
 				point.y >= 0 && point.y <= mState.height )
 			{
 				mState.X.abs = point.x;
 				mState.Y.abs = point.y;
+				isInsideWindow = true;
+			}
+			
+			if( mShowMouse == false && mShowMouseState == isInsideWindow)
+			{
+				//Show cursor if its outside of the window and hide if its comming back.
+				mShowMouseState = !mShowMouseState;
+				ShowCursor(mShowMouseState);
 			}
 		}
 		else
@@ -248,19 +258,18 @@ void Win32Mouse::grab(bool grab)
 	if (FAILED(hr) && hr != DIERR_OTHERAPPHASPRIO)
 		OIS_EXCEPT( E_General, "Win32Mouse::Win32Mouse >> Failed to aquire mouse!" );
 
-	ShowCursor(mHideMouse);
-
 	mGrabMouse = grab;
 }
 
 //--------------------------------------------------------------------------------------------------//
 void Win32Mouse::hide(bool hide)
 {
-	if(mHideMouse == hide)
-		return;
-
-	mHideMouse = hide;
-	ShowCursor(hide);
+	mShowMouse = !hide;
+	if(mShowMouseState != mShowMouse)
+	{
+		mShowMouseState = mShowMouse;
+		ShowCursor(mShowMouseState);
+	}
 }
 
 //--------------------------------------------------------------------------------------------------//

@@ -58,7 +58,8 @@ namespace OIS
 		DWORD coopSetting;
 		HWND mHwnd;
 		bool mGrabMouse;
-		bool mHideMouse;
+		bool mShowMouse;
+		bool mShowMouseState;
 	};
 }
 
