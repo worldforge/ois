@@ -139,8 +139,8 @@ namespace OIS
 
 		/**
 		 @remarks
-			Moves the mouse to the specified position. This function will only work if the
-			mouse isn't grabbed.
+			Moves the mouse to the specified position. This function will
+			only change absolute position in grabbed mode.
 		*/
 		virtual void setPosition(unsigned int x, unsigned int y) = 0;
 

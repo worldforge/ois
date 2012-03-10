@@ -276,11 +276,17 @@ void Win32Mouse::hide(bool hide)
 void Win32Mouse::setPosition(unsigned int x, unsigned int y)
 {
 	if(mGrabMouse)
-		return;
+	{
+		mState.X.abs = x;
+		mState.Y.abs = y;
+	}
+	else
+	{
+		POINT point;
+		point.x = x;
+		point.y = y;
+		ClientToScreen(mHwnd, &point);
+		SetCursorPos(point.x, point.y);
+	}
 
-	POINT point;
-	point.x = x;
-	point.y = y;
-	ClientToScreen(mHwnd, &point);
-	SetCursorPos(point.x, point.y);
 }
