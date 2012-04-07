@@ -217,7 +217,7 @@ void LinuxMouse::_processXEvents()
 		}
 		else if( event.type == ButtonPress )
 		{	//Button down
-			static_cast<LinuxInputManager*>(mCreator)->_setKeyboardGrabState(true);
+			static_cast<LinuxInputManager*>(mCreator)->_setWindowFocus(true);
 
 			if( event.xbutton.button < 4 )
 			{

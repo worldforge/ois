@@ -88,8 +88,7 @@ namespace OIS
 		//! X11 Stuff
 		Window window;
 		Display *display;
-		bool grabKeyboard;
-		bool keyFocusLost;
+		bool mGrabKeyboard;
 
 		std::string mGetString;
 	};

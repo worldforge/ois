@@ -66,6 +66,12 @@ namespace OIS
 		//! Method for retrieving the XWindow Handle
 		Window _getWindow() {return window;}
 
+		//! Internal methods for mouse-keyboard communication.
+		//! alt+tab will release grab (loose focus), mouse click will regain grab (regain focus).
+		//! This way the user has always a chance to release the grab.
+		void _setWindowFocus(bool hasFocus) {mHasFocus = hasFocus;}
+		bool _hasWindowFocus() {return mHasFocus;}
+
 		//! Internal method, used for flagging keyboard grab
 		bool _getKeyboardGrabState() { return mGrab; }
 

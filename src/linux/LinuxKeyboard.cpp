@@ -40,8 +40,7 @@ LinuxKeyboard::LinuxKeyboard(InputManager* creator, bool buffered, bool grab)
 	display = 0;
 	window = 0;
 
-	grabKeyboard = grab;
-	keyFocusLost = false;
+	mGrabKeyboard = grab;
 
 	//X Key Map to KeyCode
 	keyConversion.insert(XtoOIS_KeyMap::value_type(XK_1, KC_1));
@@ -205,10 +204,9 @@ void LinuxKeyboard::_initialize()
 	if( XSelectInput(display, window, KeyPressMask | KeyReleaseMask) == BadWindow )
 		OIS_EXCEPT(E_General, "LinuxKeyboard::_initialize: X error!");
 
-	if( grabKeyboard )
+	if( mGrabKeyboard )
 		XGrabKeyboard(display,window,True,GrabModeAsync,GrabModeAsync,CurrentTime);
 
-	keyFocusLost = false;
 }
 
 //-------------------------------------------------------------------//
@@ -216,7 +214,7 @@ LinuxKeyboard::~LinuxKeyboard()
 {
 	if( display )
 	{
-		if( grabKeyboard )
+		if( mGrabKeyboard )
 			XUngrabKeyboard(display, CurrentTime);
 
 		XCloseDisplay(display);
@@ -279,11 +277,11 @@ void LinuxKeyboard::capture()
 {
 	KeySym key;
 	XEvent event;
-	LinuxInputManager* linMan = static_cast<LinuxInputManager*>(mCreator);
 
 	while( XPending(display) > 0 )
 	{
-		XNextEvent(display, &event);
+		XNextEvent(display, &event);
+
 		if(KeyPress == event.type)
 		{
 			unsigned int character = 0;
@@ -311,8 +309,10 @@ void LinuxKeyboard::capture()
 			//std::cout << "\n KeySym=" << key << std::endl;
 
 			//Check for Alt-Tab
-			if( event.xkey.state & Mod1Mask && key == XK_Tab )
-				linMan->_setKeyboardGrabState(false);
+			if( key == XK_Tab && ( event.xkey.state & Mod1Mask ) )
+			{
+				static_cast<LinuxInputManager*>(mCreator)->_setWindowFocus(false);
+			}
 		}
 		else if(KeyRelease == event.type)
 		{
@@ -323,32 +323,29 @@ void LinuxKeyboard::capture()
 				event.xkey.state &= ~LockMask;
 
 				XLookupString(&event.xkey,NULL,0,&key,NULL);
-				_injectKeyUp(key);			}
+				_injectKeyUp(key);
+			}
 		}
 	}
 
-	//If grabbing mode is on.. Handle focus lost/gained via Alt-Tab and mouse clicks
-	if( grabKeyboard )
+	LinuxInputManager* inputManager = static_cast<LinuxInputManager*>(mCreator);
+	bool grab = inputManager->_getKeyboardGrabState(); //requested grab state
+	bool hasFocus = inputManager->_hasWindowFocus(); //release grab if focus is lost.
+
+	bool needGrabSwitch = mGrabKeyboard && ( !grab || !hasFocus ) ||
+	                    ( !mGrabKeyboard && grab && hasFocus );
+
+	//Handle focus lost/gained via Alt-Tab and mouse clicks.
+	if( needGrabSwitch )
 	{
-		if( linMan->_getKeyboardGrabState() == false )
+		mGrabKeyboard = !mGrabKeyboard;
+		if( mGrabKeyboard )
 		{
-			// are no longer grabbing
-			if( keyFocusLost == false )
-			{
-				//UnGrab KeyBoard
-				XUngrabKeyboard(display, CurrentTime);
-				keyFocusLost = true;
-			}
+			XGrabKeyboard(display, window, True, GrabModeAsync, GrabModeAsync, CurrentTime);
 		}
 		else
 		{
-			//We are grabbing - and regained focus
-			if( keyFocusLost == true )
-			{
-				//ReGrab KeyBoard
-				XGrabKeyboard(display, window, True, GrabModeAsync, GrabModeAsync, CurrentTime);
-				keyFocusLost = false;
-			}
+			XUngrabKeyboard(display, CurrentTime);
 		}
 	}
 }
