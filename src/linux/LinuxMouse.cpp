@@ -323,11 +323,14 @@ void LinuxMouse::hide(bool hide)
 //-------------------------------------------------------------------//
 void LinuxMouse::setPosition(unsigned int x, unsigned int y)
 {
-	if(grabMouse)
+	if(grabMouse && !mouseFocusLost)
 	{
-		return;
+		grabX = mState.X.abs;
+		grabY = mState.Y.abs;
 	}
-
-	XWarpPointer(display, None, window, 0, 0, 0, 0, x, y);
-	mWarped = true;
+	else
+	{
+		XWarpPointer(display, None, window, 0, 0, 0, 0, x, y);
+		mWarped = true;
+	}
 }
