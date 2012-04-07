@@ -36,10 +36,9 @@ LinuxInputManager::LinuxInputManager() : InputManager("X11InputManager")
 	window = 0;
 
 	//Default settings
-	grabMouse = true;
-	grabKeyboard = true;
 	hideMouse = true;
-	mGrabs = true;
+	mGrab = true;
+	mHasFocus = true;
 	keyboardUsed = mouseUsed = false;
 
 	//Setup our internal factories
@@ -74,17 +73,11 @@ void LinuxInputManager::_parseConfigSettings( ParamList &paramList )
 
 		window = strtoull(i->second.c_str(), 0, 10);
 
-	//--------- Keyboard Settings ------------//
-	i = paramList.find("x11_keyboard_grab");
-	if( i != paramList.end() )
-		if( i->second == "false" )
-			grabKeyboard = false;
-
 	//--------- Mouse Settings ------------//
 	i = paramList.find("x11_mouse_grab");
 	if( i != paramList.end() )
 		if( i->second == "false" )
-			grabMouse = false;
+			mGrab = false;
 
 	i = paramList.find("x11_mouse_hide");
 	if( i != paramList.end() )
@@ -171,14 +164,14 @@ Object* LinuxInputManager::createObject(InputManager *creator, Type iType, bool 
 	case OISKeyboard:
 	{
 		if(window && keyboardUsed == false)
-			obj = new LinuxKeyboard(this, bufferMode, grabKeyboard);
+			obj = new LinuxKeyboard(this, bufferMode, mGrab);
 
 		break;
 	}
 	case OISMouse:
 	{
 		if(window && mouseUsed == false)
-			obj = new LinuxMouse(this, bufferMode, grabMouse, hideMouse);
+			obj = new LinuxMouse(this, bufferMode, mGrab, hideMouse);
 
 		break;
 	}

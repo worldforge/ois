@@ -128,7 +128,7 @@ void LinuxMouse::capture()
 	//Check for losing/gaining mouse grab focus (alt-tab, etc)
 	if( grabMouse )
 	{
-		if( static_cast<LinuxInputManager*>(mCreator)->_getGrabState() )
+		if( static_cast<LinuxInputManager*>(mCreator)->_getKeyboardGrabState() )
 		{
 			if( mouseFocusLost )	//We just regained mouse grab focus
 			{
@@ -217,7 +217,7 @@ void LinuxMouse::_processXEvents()
 		}
 		else if( event.type == ButtonPress )
 		{	//Button down
-			static_cast<LinuxInputManager*>(mCreator)->_setGrabState(true);
+			static_cast<LinuxInputManager*>(mCreator)->_setKeyboardGrabState(true);
 
 			if( event.xbutton.button < 4 )
 			{

@@ -312,7 +312,7 @@ void LinuxKeyboard::capture()
 
 			//Check for Alt-Tab
 			if( event.xkey.state & Mod1Mask && key == XK_Tab )
-				linMan->_setGrabState(false);
+				linMan->_setKeyboardGrabState(false);
 		}
 		else if(KeyRelease == event.type)
 		{
@@ -330,7 +330,7 @@ void LinuxKeyboard::capture()
 	//If grabbing mode is on.. Handle focus lost/gained via Alt-Tab and mouse clicks
 	if( grabKeyboard )
 	{
-		if( linMan->_getGrabState() == false )
+		if( linMan->_getKeyboardGrabState() == false )
 		{
 			// are no longer grabbing
 			if( keyFocusLost == false )
