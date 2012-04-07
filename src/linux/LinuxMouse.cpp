@@ -356,6 +356,10 @@ void LinuxMouse::hide(bool hide)
 //-------------------------------------------------------------------//
 void LinuxMouse::setPosition(unsigned int x, unsigned int y)
 {
+	if( mouseFocusLost )
+	{
+		return;
+	}
 	if(_grabMouse)
 	{
 		grabX = mState.X.abs;
