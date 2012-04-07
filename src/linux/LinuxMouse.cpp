@@ -297,11 +297,13 @@ void LinuxMouse::grab(bool grab)
 		grabX = mState.X.abs;
 		grabY = mState.Y.abs;
 		XGrabPointer(display, window, True, 0, GrabModeAsync, GrabModeAsync, window, None, CurrentTime);
+		_hide(true);
 	}
 	else
 	{
-		setPosition(grabX, grabY);
 		XUngrabPointer(display, CurrentTime);
+		setPosition(grabX, grabY);
+		_hide(hideMouse);
 	}
 }
 
