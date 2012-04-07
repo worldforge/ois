@@ -138,27 +138,27 @@ void LinuxMouse::capture()
 		mMoved = false;
 	}
 
+
 	//Check for losing/gaining mouse grab focus (alt-tab, etc)
-	if( _grabMouse )
+	LinuxInputManager* inputManager = static_cast<LinuxInputManager*>(mCreator);
+	bool hasFocus = inputManager->_hasWindowFocus();
+
+	if( _grabMouse && !hasFocus )
 	{
-		if( static_cast<LinuxInputManager*>(mCreator)->_getKeyboardGrabState() )
+		if( !mouseFocusLost )	//We just loose mouse grab focus
 		{
-			if( mouseFocusLost )	//We just regained mouse grab focus
-			{
-				_grab( true );
-				_hide( hideMouse );
-				mouseFocusLost = false;
-			}
+			//Don't change the order of the following 3 lines!
+			_grab( false );
+			_hide( false );
+			mouseFocusLost = true;
 		}
-		else
-		{
-			if( mouseFocusLost == false )	//We just lost mouse grab focus
-			{
-				_grab( false );
-				_hide( false );
-				mouseFocusLost = true;
-			}
-		}
+	}
+	else if( mouseFocusLost && hasFocus )	//We just regained mouse grab focus
+	{
+		//Don't change the order of the following 3 lines!
+		mouseFocusLost = false;
+		_hide( hideMouse );
+		_grab( grabMouse );
 	}
 }
 
