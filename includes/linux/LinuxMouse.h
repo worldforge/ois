@@ -54,6 +54,7 @@ namespace OIS
 		void grab(bool grab);
 		void hide(bool hide);
 		void setPosition (unsigned int x, unsigned int y);
+		void _injectMouseMoved(int x, int y);
 
 	protected:
 		void _processXEvents();

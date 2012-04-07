@@ -49,9 +49,7 @@ void LinuxMouse::_initialize()
 	mMoved  = false;
 	mWarped = false;
 
-	//6 is just some random value... hardly ever would anyone have a window smaller than 6
-	oldXMouseX = oldXMouseY = 6;
-	oldXMouseZ = 0;
+	oldXMouseX = oldXMouseY = oldXMouseZ = 0;
 
 	if( display ) XCloseDisplay(display);
 	display = 0;
@@ -62,7 +60,7 @@ void LinuxMouse::_initialize()
 		OIS_EXCEPT(E_General, "LinuxMouse::_initialize >> Error opening X!");
 
 	//Set it to recieve Mouse Input events
-	if( XSelectInput(display, window, ButtonPressMask | ButtonReleaseMask | PointerMotionMask) == BadWindow )
+	if( XSelectInput(display, window, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask) == BadWindow )
 		OIS_EXCEPT(E_General, "LinuxMouse::_initialize >> X error!");
 
 	//Warp mouse inside window
@@ -161,62 +159,19 @@ void LinuxMouse::_processXEvents()
 	{
 		XNextEvent(display, &event);
 
-		if( event.type == MotionNotify )
-		{	//Mouse moved
-			//Ignore out of bounds mouse if we just warped
-			if( mWarped )
-			{
-				if(event.xmotion.x < 5 || event.xmotion.x > mState.width - 5 ||
-				   event.xmotion.y < 5 || event.xmotion.y > mState.height - 5)
-					continue;
-			}
-
-			//Compute this frames Relative X & Y motion
-			int dx = event.xmotion.x - oldXMouseX;
-			int dy = event.xmotion.y - oldXMouseY;
-		
-			//Store old values for next time to compute relative motion
-			oldXMouseX = event.xmotion.x;
-			oldXMouseY = event.xmotion.y;
-
-			mState.X.abs += dx;
-			mState.Y.abs += dy;
-			mState.X.rel += dx;
-			mState.Y.rel += dy;
-
-			//Check to see if we are grabbing the mouse to the window (requires clipping and warping)
-			if( grabMouse )
-			{
-				if(mWarped)
- 					continue;
-				
-				if( mState.X.abs < 0 )
-					mState.X.abs = 0;
-				else if( mState.X.abs > mState.width )
-					mState.X.abs = mState.width;
-
-				if( mState.Y.abs < 0 )
-					mState.Y.abs = 0;
-				else if( mState.Y.abs > mState.height )
-					mState.Y.abs = mState.height;
-
-				if( mouseFocusLost == false )
-				{
-					//Keep mouse in window (fudge factor)
-					if(event.xmotion.x < 5 || event.xmotion.x > mState.width - 5 ||
-					   event.xmotion.y < 5 || event.xmotion.y > mState.height - 5 )
-					{
-						oldXMouseX = mState.width >> 1;  //center x
-						oldXMouseY = mState.height >> 1; //center y
-						XWarpPointer(display, None, window, 0, 0, 0, 0, oldXMouseX, oldXMouseY);
-						mWarped = true;
-					}
-				}
-			}
-			mMoved = true;
-		}
-		else if( event.type == ButtonPress )
-		{	//Button down
+		switch(event.type)
+		{
+		case LeaveNotify:
+			//Mouse moved
+			_injectMouseMoved(event.xmotion.x, event.xmotion.y);
+			break;
+		case MotionNotify:
+		case EnterNotify:
+			//Mouse moved
+			_injectMouseMoved(event.xcrossing.x, event.xcrossing.y);
+			break;
+		case ButtonPress:
+			//Button down
 			static_cast<LinuxInputManager*>(mCreator)->_setWindowFocus(true);
 
 			if( event.xbutton.button < 4 )
@@ -227,9 +182,9 @@ void LinuxMouse::_processXEvents()
 						(MouseButtonID)(mask[event.xbutton.button] >> 1)) == false )
 						return;
 			}
-		}
-		else if( event.type == ButtonRelease )
-		{	//Button up
+			break;
+		case ButtonRelease:
+			//Button up
 			if( event.xbutton.button < 4 )
 			{
 				mState.buttons &= ~mask[event.xbutton.button];
@@ -252,8 +207,64 @@ void LinuxMouse::_processXEvents()
 				mState.Z.abs -= 120;
 				mMoved = true;
 			}
+			break;
 		}
 	}
+}
+
+void LinuxMouse::_injectMouseMoved(int x, int y)
+{
+	//Ignore out of bounds mouse if we just warped
+	if( mWarped )
+	{
+		if(x < 5 || x > mState.width - 5 ||
+		   y < 5 || y > mState.height - 5)
+			return;
+	}
+
+	//Compute this frames Relative X & Y motion
+	int dx = x - oldXMouseX;
+	int dy = y - oldXMouseY;
+
+	//Store old values for next time to compute relative motion
+	oldXMouseX = x;
+	oldXMouseY = y;
+
+	mState.X.abs += dx;
+	mState.Y.abs += dy;
+	mState.X.rel += dx;
+	mState.Y.rel += dy;
+
+	//Check to see if we are grabbing the mouse to the window (requires clipping and warping)
+	if( grabMouse )
+	{
+		if(mWarped)
+			return;
+
+		if( mState.X.abs < 0 )
+			mState.X.abs = 0;
+		else if( mState.X.abs > mState.width )
+			mState.X.abs = mState.width;
+
+		if( mState.Y.abs < 0 )
+			mState.Y.abs = 0;
+		else if( mState.Y.abs > mState.height )
+			mState.Y.abs = mState.height;
+
+		if( mouseFocusLost == false )
+		{
+			//Keep mouse in window (fudge factor)
+			if(x < 5 || x > mState.width - 5 ||
+			   y < 5 || y > mState.height - 5 )
+			{
+				oldXMouseX = mState.width >> 1;  //center x
+				oldXMouseY = mState.height >> 1; //center y
+				XWarpPointer(display, None, window, 0, 0, 0, 0, oldXMouseX, oldXMouseY);
+				mWarped = true;
+			}
+		}
+	}
+	mMoved = true;
 }
 
 //-------------------------------------------------------------------//
