@@ -38,6 +38,9 @@ LinuxMouse::LinuxMouse(InputManager* creator, bool buffered, bool grab, bool hid
 	grabMouse = grab;
 	hideMouse = hide;
 
+	_grabMouse = false;
+	_hideMouse = false;
+
 	static_cast<LinuxInputManager*>(mCreator)->_setMouseUsed(true);
 }
 
@@ -85,8 +88,12 @@ void LinuxMouse::_initialize()
 		static_cast<LinuxInputManager*>(mCreator)->_setWindowFocus(false);
 	}
 
-	grab( grabMouse );
-	hide( hideMouse );
+	//set internal grab state to the inverse of user requested to force a hide and grab.
+	_grabMouse = !grabMouse;
+	_hideMouse = !hideMouse;
+
+	_hide( hideMouse );
+	_grab( grabMouse );
 
 	mouseFocusLost = false;
 }
@@ -96,8 +103,8 @@ LinuxMouse::~LinuxMouse()
 {
 	if( display )
 	{
-		grab(false);
-		hide(false);
+		_grab(false);
+		_hide(false);
 		XFreeCursor(display, cursor);
 		XCloseDisplay(display);
 	}
@@ -132,14 +139,14 @@ void LinuxMouse::capture()
 	}
 
 	//Check for losing/gaining mouse grab focus (alt-tab, etc)
-	if( grabMouse )
+	if( _grabMouse )
 	{
 		if( static_cast<LinuxInputManager*>(mCreator)->_getKeyboardGrabState() )
 		{
 			if( mouseFocusLost )	//We just regained mouse grab focus
 			{
-				grab( true );
-				hide( hideMouse );
+				_grab( true );
+				_hide( hideMouse );
 				mouseFocusLost = false;
 			}
 		}
@@ -147,8 +154,8 @@ void LinuxMouse::capture()
 		{
 			if( mouseFocusLost == false )	//We just lost mouse grab focus
 			{
-				grab( false );
-				hide( false );
+				_grab( false );
+				_hide( false );
 				mouseFocusLost = true;
 			}
 		}
@@ -284,14 +291,21 @@ void LinuxMouse::_injectMouseMoved(int x, int y)
 }
 
 //-------------------------------------------------------------------//
-void LinuxMouse::grab(bool grab)
+void LinuxMouse::_grab(bool grab)
 {
-	if(grabMouse == grab)
+
+	//Never grab, when lost window focus.
+	if(mouseFocusLost || _grabMouse == grab)
 	{
 		return;
 	}
 
-	grabMouse = grab;
+	_grabMouse = grab;
+
+	// We need to set keyboard grab too or the keyboard will not receive alt+tab event
+	// and the user can't leave mouse grab manually.
+	static_cast<LinuxInputManager*>(mCreator)->_setKeyboardGrabState(grab);
+
 	if( grab )
 	{
 		grabX = mState.X.abs;
@@ -308,24 +322,41 @@ void LinuxMouse::grab(bool grab)
 }
 
 //-------------------------------------------------------------------//
-void LinuxMouse::hide(bool hide)
+void LinuxMouse::grab(bool grab)
 {
-	if(hideMouse == hide)
+	grabMouse = grab;
+	_grab(grab);
+}
+
+void LinuxMouse::_hide(bool hide)
+{
+	//Never hide, when lost focus!
+	if(mouseFocusLost || _hideMouse == hide)
 	{
 		return;
 	}
 
-	hideMouse = hide;
+	_hideMouse = hide;
+
 	if( hide )
+		//Define the invisible cursor.
 		XDefineCursor(display, window, cursor);
 	else
+		//Undefine the invisible cursor.
 		XUndefineCursor(display, window);
+}
+
+//-------------------------------------------------------------------//
+void LinuxMouse::hide(bool hide)
+{
+	hideMouse = hide;
+	_hide( hide );
 }
 
 //-------------------------------------------------------------------//
 void LinuxMouse::setPosition(unsigned int x, unsigned int y)
 {
-	if(grabMouse && !mouseFocusLost)
+	if(_grabMouse)
 	{
 		grabX = mState.X.abs;
 		grabY = mState.Y.abs;

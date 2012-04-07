@@ -59,6 +59,9 @@ namespace OIS
 	protected:
 		void _processXEvents();
 
+		void _hide(bool hide);
+		void _grab(bool grab);
+
 		bool mMoved, mWarped;
 
 		//Since X11 provides us with absolute values, we need to keep track of relative values
@@ -68,8 +71,12 @@ namespace OIS
 		Display *display;	//The X display
 		Cursor cursor;		//A blank cursor
 
-		bool grabMouse;		//Are we grabbing the mouse to the window?
-		bool hideMouse;		//Are we hiding OS mouse?
+
+		bool grabMouse;		//Whether the user has requested grabbed mouse.
+		bool hideMouse;		//Whether the user has requested invisible cursor.
+		bool _grabMouse;	//Whether the mouse is grabbed
+		bool _hideMouse;	//Whether the cursor is hidden.
+
 		bool mouseFocusLost;//Has the mouse just lost focus?
 		unsigned int grabX, grabY; //At which point did we start grabbing?
 	};
