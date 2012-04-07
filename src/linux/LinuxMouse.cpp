@@ -214,6 +214,11 @@ void LinuxMouse::_processXEvents()
 
 void LinuxMouse::_injectMouseMoved(int x, int y)
 {
+	if(x == oldXMouseX && y == oldXMouseY)
+	{
+		return;
+	}
+
 	//Ignore out of bounds mouse if we just warped
 	if( mWarped )
 	{
@@ -230,40 +235,43 @@ void LinuxMouse::_injectMouseMoved(int x, int y)
 	oldXMouseX = x;
 	oldXMouseY = y;
 
-	mState.X.abs += dx;
-	mState.Y.abs += dy;
+	if( grabMouse && !mouseFocusLost)
+	{
+		mState.X.abs += dx;
+		mState.Y.abs += dy;
+	}
+	else
+	{
+		mState.X.abs = x;
+		mState.Y.abs = y;
+	}
 	mState.X.rel += dx;
 	mState.Y.rel += dy;
 
 	//Check to see if we are grabbing the mouse to the window (requires clipping and warping)
-	if( grabMouse )
+	if( mState.X.abs < 0 )
+		mState.X.abs = 0;
+	else if( mState.X.abs > mState.width )
+		mState.X.abs = mState.width;
+
+	if( mState.Y.abs < 0 )
+		mState.Y.abs = 0;
+	else if( mState.Y.abs > mState.height )
+		mState.Y.abs = mState.height;
+
+	if( grabMouse && !mWarped && !mouseFocusLost)
 	{
-		if(mWarped)
-			return;
-
-		if( mState.X.abs < 0 )
-			mState.X.abs = 0;
-		else if( mState.X.abs > mState.width )
-			mState.X.abs = mState.width;
-
-		if( mState.Y.abs < 0 )
-			mState.Y.abs = 0;
-		else if( mState.Y.abs > mState.height )
-			mState.Y.abs = mState.height;
-
-		if( mouseFocusLost == false )
+		//Keep mouse in window (fudge factor)
+		if(x < 5 || x > mState.width - 5 ||
+		   y < 5 || y > mState.height - 5 )
 		{
-			//Keep mouse in window (fudge factor)
-			if(x < 5 || x > mState.width - 5 ||
-			   y < 5 || y > mState.height - 5 )
-			{
-				oldXMouseX = mState.width >> 1;  //center x
-				oldXMouseY = mState.height >> 1; //center y
-				XWarpPointer(display, None, window, 0, 0, 0, 0, oldXMouseX, oldXMouseY);
-				mWarped = true;
-			}
+			oldXMouseX = mState.width >> 1; //center x
+			oldXMouseY = mState.height >> 1; //center y
+			XWarpPointer(display, None, window, 0, 0, 0, 0, oldXMouseX, oldXMouseY);
+			mWarped = true;
 		}
 	}
+
 	mMoved = true;
 }
 
