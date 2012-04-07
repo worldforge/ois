@@ -63,9 +63,6 @@ void LinuxMouse::_initialize()
 	if( XSelectInput(display, window, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask) == BadWindow )
 		OIS_EXCEPT(E_General, "LinuxMouse::_initialize >> X error!");
 
-	//Warp mouse inside window
-	setPosition(0, 0);
-
 	//Create a blank cursor:
 	Pixmap bm_no;
 	XColor black, dummy;
@@ -76,6 +73,17 @@ void LinuxMouse::_initialize()
 	XAllocNamedColor( display, colormap, "black", &black, &dummy );
 	bm_no = XCreateBitmapFromData( display, window, no_data, 8, 8 );
 	cursor = XCreatePixmapCursor( display, bm_no, bm_no, &black, &black, 0, 0 );
+
+	Window focusWindow;
+	int focusWindowState;
+	Display* disp = XOpenDisplay(0);
+	XGetInputFocus(disp, &focusWindow, &focusWindowState);
+	XCloseDisplay(disp);
+	if(focusWindow != window)
+	{
+		//don't grab input, if we don't have focus.
+		static_cast<LinuxInputManager*>(mCreator)->_setWindowFocus(false);
+	}
 
 	grab( grabMouse );
 	hide( hideMouse );
