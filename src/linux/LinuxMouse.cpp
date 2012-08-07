@@ -368,6 +368,8 @@ void LinuxMouse::setPosition(unsigned int x, unsigned int y)
 	else
 	{
 		XWarpPointer(display, None, window, 0, 0, 0, 0, x, y);
+		oldXMouseX = x;
+		oldXMouseY = y;
 		mWarped = true;
 	}
 }
