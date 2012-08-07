@@ -364,6 +364,8 @@ void LinuxMouse::setPosition(unsigned int x, unsigned int y)
 	{
 		grabX = mState.X.abs;
 		grabY = mState.Y.abs;
+		mState.X.abs = x;
+		mState.Y.abs = y;
 	}
 	else
 	{
